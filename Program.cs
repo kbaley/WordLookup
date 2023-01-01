@@ -13,19 +13,17 @@ var letters = args[0].ToCharArray();
 var words = File.ReadAllLines("words");
 
 // Trims the word list to ones that contain only 7 or fewer unique letters
-// Writes the results to "newwords" just in case
 if (args[0] == "trim")
 {
     var sevenLetters = words
         .Where(w => w.Length >= 4)
         .Where(w => w.ToLower().Distinct().Count() <= 7);
-    File.WriteAllLines("newwords", sevenLetters);
+    File.WriteAllLines("words", sevenLetters);
     return;
 }
 
-// Adds all words from the "extras" file to the word list
-// Removes all words from the "ignored" file from the word list
-// Writes the results to "newwords" just in case
+// Adds all words from the "toBeAdded" file to the word list
+// Removes all words from the "toBeRemoved" file from the word list
 if (args[0] == "sync")
 {
     Console.WriteLine("syncing");
@@ -35,8 +33,8 @@ if (args[0] == "sync")
     newList = newList.OrderBy(w => w).ToList();
     var ignored = File.ReadAllLines("toBeRemoved");
     File.WriteAllLines("words", newList.Where(w => !ignored.Contains(w)));
-    File.WriteAllLines("extras", Array.Empty<string>());
-    File.WriteAllLines("ignored", Array.Empty<string>());
+    File.WriteAllLines("toBeAdded", Array.Empty<string>());
+    File.WriteAllLines("toBeRemoved", Array.Empty<string>());
     return;
 }
 

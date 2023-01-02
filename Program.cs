@@ -53,8 +53,10 @@ char[] letters;
 string center;
 if (doAnswerSync)
 {
-    letters = File.ReadLines("answers").First().ToCharArray();
-    center = letters[0].ToString();
+    center = File.ReadLines("answers").First();
+    letters = File.ReadAllText("answers").ToCharArray().Distinct()
+        .Where(l => "qwertyuiopasdfghjklzxcvbnm".Contains(l)).ToArray();
+
 } else {
     letters = args[0].ToCharArray();
     center = args[1];

@@ -12,3 +12,9 @@ The word list is a work in progress. I started with the macOS word list (from `/
 After that, there are still a *lot* of words in it that aren't accepted (Zyzzogeton? csardas?) and a lot that _aren't_ in the list that are accepted (e.g. mondo). So after each game, I add the words that should be removed to the `toBeRemoved` file and the words that should be added to the `toBeAdded` file (one word per line). Then I run `dotnet run -- sync sync` to sync this with the master word list.
 
 Note: Yes, using the program is cheating. I built it as an exercise, to see how hard it was. My initial thought was to look up all combinations of letters up to, say, 15 letters long. Then optimize for things like "no more than two of the same letter in a row". Eventually I realized the number of combinations would be in the millions and there are only a few dozen thousand common words in the English language. So it's faster just to look through that list and see if it meets the criteria of whether it contains the required letters. And lo! macOS contains a decent starting point already.
+
+If you add `sync` to the end of the command (e.g. `dotnet gyapmlo a sync`), the application will compare the results with the values in an `answers` file and populate the `toBeAdded` and `toBeRemoved` files accordingly. It won't automatically update the `words` file so you can review the contents of the files first.
+
+## Acknowledgements
+
+Thanks to https://nytbee.com/ for providing archival answers for refining the dictionary. I looked at a few sites that had archives and this one provided answers in a way that was easiest to copy and paste from.

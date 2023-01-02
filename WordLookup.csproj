@@ -6,5 +6,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Content Include="words" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="answers" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="toBeAdded" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="toBeRemoved" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 
 </Project>

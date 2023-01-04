@@ -43,8 +43,8 @@ if (doAnswerSync)
     using var playwright = await Playwright.CreateAsync();
     await using var browser = await playwright.Chromium.LaunchAsync();
     var page = await browser.NewPageAsync();
-    var date = new DateTime(2022, 4, 1);
-    while (date > new DateTime(2022, 1, 1))
+    var date = new DateTime(2022, 1, 1);
+    while (date > new DateTime(2021, 1, 1))
     {
         var dateFormatted = date.ToString("yyyyMMdd");
         Console.WriteLine($"Processing: {dateFormatted}");

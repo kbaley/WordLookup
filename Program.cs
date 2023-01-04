@@ -43,23 +43,28 @@ if (doAnswerSync)
     using var playwright = await Playwright.CreateAsync();
     await using var browser = await playwright.Chromium.LaunchAsync();
     var page = await browser.NewPageAsync();
-    var date = new DateTime(2018, 7, 30);
-    while (date > new DateTime(2018, 7, 1))
+    var date = new DateTime(2018, 8, 1);
+    while (date < new DateTime(2023, 1, 5))
     {
         var dateFormatted = date.ToString("yyyyMMdd");
         Console.WriteLine($"Processing: {dateFormatted}");
         await page.GotoAsync($"https://nytbee.com/Bee_{dateFormatted}.html");
-        var text = page.Locator("#intro-text + div")
-            .GetByRole(AriaRole.Listitem);
+        var text = page.Locator("#intro-text + div li");
         var answers = new List<string>();
         for (int i = 0; i < await text.CountAsync(); i++)
         {
-            answers.Add(await text.Nth(i).TextContentAsync());
+            var word = (await text.Nth(i).TextContentAsync() ?? "").Trim();
+            if (!string.IsNullOrWhiteSpace(word))
+            {
+                 answers.Add(word);
+            }
         }
-        // var answers = text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        DoAnswerSync(words, answers, true);
-        words = File.ReadAllLines("words");
-        date = date.AddDays(-1);
+        if (answers.Count > 0)
+        {
+            DoAnswerSync(words, answers, true);
+            words = File.ReadAllLines("words");
+        }
+        date = date.AddDays(1);
     }
 
     return;

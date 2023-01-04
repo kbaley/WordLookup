@@ -95,7 +95,7 @@ async static Task RefineDictionary(IEnumerable<string> words) {
     await using var browser = await playwright.Chromium.LaunchAsync();
     var page = await browser.NewPageAsync();
     var date = new DateTime(2018, 8, 1);
-    while (date < new DateTime(2023, 1, 5))
+    while (date <= DateTime.Today)
     {
         var dateFormatted = date.ToString("yyyyMMdd");
         Console.WriteLine($"Processing: {dateFormatted}");

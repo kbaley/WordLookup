@@ -49,7 +49,7 @@ if (doAnswerSync)
         var dateFormatted = date.ToString("yyyyMMdd");
         Console.WriteLine($"Processing: {dateFormatted}");
         await page.GotoAsync($"https://nytbee.com/Bee_{dateFormatted}.html");
-        var text = page.Locator("#intro-text + div.answer-list")
+        var text = page.Locator("#intro-text + div")
             .GetByRole(AriaRole.Listitem);
         var answers = new List<string>();
         for (int i = 0; i < await text.CountAsync(); i++)

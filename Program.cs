@@ -1,18 +1,16 @@
 ﻿var syncWordLists = args.Length == 1 && args[0].ToLower() == "sync";
 var trimWordList = args.Length == 1 && args[0].ToLower() == "trim";
 var doAnswerSync = args.Length == 1 && args[0].ToLower() == "answers";
-var syncAnswers = (args.Length == 3 && args[2].ToLower() == "sync") || doAnswerSync;
-var generateList = args.Length == 2 || syncAnswers;
 
-if (!syncWordLists && !trimWordList && !generateList && !doAnswerSync)
+if (!syncWordLists && !trimWordList && !doAnswerSync)
 {
     Console.WriteLine("Usage: WordLookup [command]");
     Console.WriteLine();
     Console.WriteLine("Commands:");
     Console.WriteLine("  --sync                             Add/remove words from the word list");
     Console.WriteLine("  --trim                             Trim words from the word list that don't follow Spelling Bee rules");
+    Console.WriteLine("  --answers                          Read words from an answers file and compare them to the dictionary");
     Console.WriteLine("  <letter list> <center letter>      Find all words that contain only letters in <letter list> AND the center letter");
-    Console.WriteLine("     append 'sync' to the previous command to compare the results with known answers");
     return;
 }
 
@@ -21,15 +19,12 @@ if (!syncWordLists && !trimWordList && !generateList && !doAnswerSync)
 //   - Number of distinct letters is 7 or less
 // It's also regularly augmented with new words that the NYT accepts and has some removed that
 // the NYT doesn't accept
-var words = File.ReadAllLines("words");
+var words = File.ReadLines("words");
 
 // Trims the word list to ones that contain only 7 or fewer unique letters
 if (trimWordList)
 {
-    var sevenLetters = words
-        .Where(w => w.Length >= 4)
-        .Where(w => w.ToLower().Distinct().Count() <= 7);
-    File.WriteAllLines("words", sevenLetters);
+    TrimWordList(words);
     return;
 }
 
@@ -37,7 +32,26 @@ if (trimWordList)
 // Removes all words from the "toBeRemoved" file from the word list
 if (syncWordLists)
 {
-    Console.WriteLine("syncing");
+    SyncWordList(words);
+    return;
+}
+
+if (doAnswerSync)
+{
+    DoAnswerSync(words);
+    return;
+}
+
+var wordList = Solve(words, args[0].ToCharArray(), args[1]);
+foreach (var word in words)
+{
+    Console.WriteLine(word);
+}
+Console.WriteLine($"Words: {words.Count()}");
+
+
+static void SyncWordList(IEnumerable<string> words) {
+    Console.WriteLine("Adding/removing words to dictionary...");
     var extras = File.ReadAllLines("toBeAdded").Where(w => !words.Contains(w));
     var newList = words.ToList();
     newList.AddRange(extras);
@@ -46,40 +60,64 @@ if (syncWordLists)
     File.WriteAllLines("words", newList.Where(w => !ignored.Contains(w)));
     File.WriteAllLines("toBeAdded", Array.Empty<string>());
     File.WriteAllLines("toBeRemoved", Array.Empty<string>());
-    return;
 }
 
-char[] letters;
-string center;
-if (doAnswerSync)
-{
-    center = File.ReadLines("answers").First();
-    letters = File.ReadAllText("answers").ToCharArray().Distinct()
-        .Where(l => "qwertyuiopasdfghjklzxcvbnm".Contains(l)).ToArray();
-
-} else {
-    letters = args[0].ToCharArray();
-    center = args[1];
+static void TrimWordList(IEnumerable<string> words) {
+    var sevenLetters = words
+        .Where(w => w.Length >= 4)
+        .Where(w => w.ToLower().Distinct().Count() <= 7);
+    File.WriteAllLines("words", sevenLetters);
 }
 
+static IEnumerable<string> Solve(IEnumerable<string> words, char[] letters, string center) {
+    return words.Where(
+        w => w.Contains(center) && w.All(c => letters.Contains(c))).ToArray();
+}
 
-words = words.Where(
-    w => w.Contains(center) && w.All(c => letters.Contains(c))).ToArray();
-if (!syncAnswers)
-{
-    foreach (var word in words)
-    {
-        Console.WriteLine(word);
-    }
-} else {
+static void DoAnswerSync(IEnumerable<string> words) {
+    // Read the answers
     var answers = File.ReadAllLines("answers")
-        .Skip(1)
         .Where(l => !string.IsNullOrEmpty(l))
         .Select(l => l.Trim());
-    var toBeRemoved = words.Where(w => !answers.Contains(w));
-    var toBeAdded = answers.Where(w => !words.Contains(w));
+
+    // Determine the letters by selecting all the distinct characters from the answers
+    var letters = string.Join("", answers).ToCharArray().Distinct()
+        .Where(l => "qwertyuiopasdfghjklzxcvbnm".Contains(l)).ToArray();
+
+    // Get the center letter by selecting the only character that appears in all answers
+    // Note: Is it possible there may be more than one candidate that meets the criteria?
+    var first = answers.First().Distinct();
+    var proposed = first.Where(c => answers.All(a => a.Contains(c)));
+    var center = proposed.First().ToString();
+    var wordList = Solve(words, letters, center);
+
+    // Determine which words need to be removed and added to the dictionary
+    // based on the answer
+    var toBeRemoved = wordList.Where(w => !answers.Contains(w));
+    var toBeAdded = answers.Where(w => !wordList.Contains(w));
     File.WriteAllLines("toBeRemoved", toBeRemoved);
     File.WriteAllLines("toBeAdded", toBeAdded);
-}
 
-Console.WriteLine($"Words: {words.Length}");
+    // Write out some stats
+    Console.Write("New words:\n\t");
+    Console.WriteLine(string.Join("\n\t", toBeAdded));
+    Console.WriteLine();
+    Console.WriteLine($"Center letter: {center}");
+    if (proposed.Count() > 1)
+    {
+        Console.WriteLine($"***** Multiple possible first letters: {string.Join(string.Empty, proposed.ToArray())}");
+    }
+    Console.WriteLine($"Words to be added: {toBeAdded.Count()}");
+    Console.WriteLine($"Words to be removed: {toBeRemoved.Count()}");
+    Console.WriteLine($"Answers: {answers.Count()}");
+    Console.WriteLine($"Found words: {wordList.Count()}");
+    Console.WriteLine();
+    Console.Write("Do you want to sync (Y/n)? ");
+    var doSync = Console.ReadKey();
+    Console.WriteLine();
+    if (doSync.KeyChar == 'y' || doSync.Key == ConsoleKey.Enter)
+    {
+        SyncWordList(words);
+    }
+    Console.WriteLine("Done");
+}

@@ -43,13 +43,13 @@ if (doAnswerSync)
     using var playwright = await Playwright.CreateAsync();
     await using var browser = await playwright.Chromium.LaunchAsync();
     var page = await browser.NewPageAsync();
-    var date = new DateTime(2021, 1, 1);
-    while (date > new DateTime(2020, 1, 1))
+    var date = new DateTime(2019, 8, 16);
+    while (date > new DateTime(2019, 8, 15))
     {
         var dateFormatted = date.ToString("yyyyMMdd");
         Console.WriteLine($"Processing: {dateFormatted}");
         await page.GotoAsync($"https://nytbee.com/Bee_{dateFormatted}.html");
-        var text = await page.Locator("#main-answer-list").TextContentAsync() ?? "";
+        var text = await page.Locator("#answer-list").TextContentAsync() ?? "";
         var answers = text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         date = date.AddDays(-1);
         DoAnswerSync(words, answers, true);

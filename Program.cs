@@ -3,8 +3,9 @@
 var syncWordLists = args.Length == 1 && args[0].ToLower() == "sync";
 var trimWordList = args.Length == 1 && args[0].ToLower() == "trim";
 var doAnswerSync = args.Length == 1 && args[0].ToLower() == "answers";
+var doRefineDictionary = args.Length == 1 && args[0].ToLower() == "refine";
 
-if (!syncWordLists && !trimWordList && !doAnswerSync)
+if (!syncWordLists && !trimWordList && !doAnswerSync && !doRefineDictionary)
 {
     Console.WriteLine("Usage: WordLookup [command]");
     Console.WriteLine();
@@ -12,6 +13,7 @@ if (!syncWordLists && !trimWordList && !doAnswerSync)
     Console.WriteLine("  --sync                             Add/remove words from the word list");
     Console.WriteLine("  --trim                             Trim words from the word list that don't follow Spelling Bee rules");
     Console.WriteLine("  --answers                          Read words from an answers file and compare them to the dictionary");
+    Console.WriteLine("  --refine                           Extract answers from https://nytbee.com and refine the word dictionary");
     Console.WriteLine("  <letter list> <center letter>      Find all words that contain only letters in <letter list> AND the center letter");
     return;
 }
@@ -38,35 +40,15 @@ if (syncWordLists)
     return;
 }
 
+if (doRefineDictionary)
+{
+    await RefineDictionary(words);
+    return;
+}
+
 if (doAnswerSync)
 {
-    using var playwright = await Playwright.CreateAsync();
-    await using var browser = await playwright.Chromium.LaunchAsync();
-    var page = await browser.NewPageAsync();
-    var date = new DateTime(2018, 8, 1);
-    while (date < new DateTime(2023, 1, 5))
-    {
-        var dateFormatted = date.ToString("yyyyMMdd");
-        Console.WriteLine($"Processing: {dateFormatted}");
-        await page.GotoAsync($"https://nytbee.com/Bee_{dateFormatted}.html");
-        var text = page.Locator("#intro-text + div li");
-        var answers = new List<string>();
-        for (int i = 0; i < await text.CountAsync(); i++)
-        {
-            var word = (await text.Nth(i).TextContentAsync() ?? "").Trim();
-            if (!string.IsNullOrWhiteSpace(word))
-            {
-                 answers.Add(word);
-            }
-        }
-        if (answers.Count > 0)
-        {
-            DoAnswerSync(words, answers, true);
-            words = File.ReadAllLines("words");
-        }
-        date = date.AddDays(1);
-    }
-
+    DoAnswerSync(words, null);
     return;
 }
 
@@ -103,7 +85,45 @@ static IEnumerable<string> Solve(IEnumerable<string> words, char[] letters, stri
         w => w.Contains(center) && w.All(c => letters.Contains(c))).ToArray();
 }
 
-static void DoAnswerSync(IEnumerable<string> words, IEnumerable<string> answers, bool doSilent = false) {
+async static Task RefineDictionary(IEnumerable<string> words) {
+        // Loop through all days in https://nytbee.com and extract the answers for each day
+    // Then sync the answers with the word list
+    // It's best to start at the beginning and work forward because the word list seems
+    // to have evolved over time such that words that were accepted early aren't accepted now
+    // and others have been added in the meantime
+    using var playwright = await Playwright.CreateAsync();
+    await using var browser = await playwright.Chromium.LaunchAsync();
+    var page = await browser.NewPageAsync();
+    var date = new DateTime(2018, 8, 1);
+    while (date < new DateTime(2023, 1, 5))
+    {
+        var dateFormatted = date.ToString("yyyyMMdd");
+        Console.WriteLine($"Processing: {dateFormatted}");
+        await page.GotoAsync($"https://nytbee.com/Bee_{dateFormatted}.html");
+
+        // There are better ways to extract the answers in later versions of
+        // the page but this method seems to work with all versions and allows
+        // for some days that are missing
+        var text = page.Locator("#intro-text + div li");
+        var answers = new List<string>();
+        for (int i = 0; i < await text.CountAsync(); i++)
+        {
+            var word = (await text.Nth(i).TextContentAsync() ?? "").Trim();
+            if (!string.IsNullOrWhiteSpace(word))
+            {
+                 answers.Add(word);
+            }
+        }
+        if (answers.Count > 0)
+        {
+            DoAnswerSync(words, answers, true);
+            words = File.ReadAllLines("words");
+        }
+        date = date.AddDays(1);
+    }
+}
+
+static void DoAnswerSync(IEnumerable<string> words, IEnumerable<string>? answers = null, bool doSilent = false) {
     // Read the answers
     answers ??= File.ReadAllLines("answers")
             .Where(l => !string.IsNullOrEmpty(l))

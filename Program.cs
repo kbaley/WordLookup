@@ -1,4 +1,6 @@
-﻿var syncWordLists = args.Length == 1 && args[0].ToLower() == "sync";
+﻿using Microsoft.Playwright;
+
+var syncWordLists = args.Length == 1 && args[0].ToLower() == "sync";
 var trimWordList = args.Length == 1 && args[0].ToLower() == "trim";
 var doAnswerSync = args.Length == 1 && args[0].ToLower() == "answers";
 
@@ -19,7 +21,7 @@ if (!syncWordLists && !trimWordList && !doAnswerSync)
 //   - Number of distinct letters is 7 or less
 // It's also regularly augmented with new words that the NYT accepts and has some removed that
 // the NYT doesn't accept
-var words = File.ReadLines("words");
+var words = File.ReadAllLines("words");
 
 // Trims the word list to ones that contain only 7 or fewer unique letters
 if (trimWordList)
@@ -38,7 +40,22 @@ if (syncWordLists)
 
 if (doAnswerSync)
 {
-    DoAnswerSync(words);
+    using var playwright = await Playwright.CreateAsync();
+    await using var browser = await playwright.Chromium.LaunchAsync();
+    var page = await browser.NewPageAsync();
+    var date = new DateTime(2022, 4, 1);
+    while (date > new DateTime(2022, 1, 1))
+    {
+        var dateFormatted = date.ToString("yyyyMMdd");
+        Console.WriteLine($"Processing: {dateFormatted}");
+        await page.GotoAsync($"https://nytbee.com/Bee_{dateFormatted}.html");
+        var text = await page.Locator("#main-answer-list").TextContentAsync() ?? "";
+        var answers = text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        date = date.AddDays(-1);
+        DoAnswerSync(words, answers, true);
+        words = File.ReadAllLines("words");
+    }
+
     return;
 }
 
@@ -57,7 +74,8 @@ static void SyncWordList(IEnumerable<string> words) {
     newList.AddRange(extras);
     newList = newList.OrderBy(w => w).ToList();
     var ignored = File.ReadAllLines("toBeRemoved");
-    File.WriteAllLines("words", newList.Where(w => !ignored.Contains(w)));
+    words = newList.Where(w => !ignored.Contains(w));
+    File.WriteAllLines("words", words);
     File.WriteAllLines("toBeAdded", Array.Empty<string>());
     File.WriteAllLines("toBeRemoved", Array.Empty<string>());
 }
@@ -74,11 +92,17 @@ static IEnumerable<string> Solve(IEnumerable<string> words, char[] letters, stri
         w => w.Contains(center) && w.All(c => letters.Contains(c))).ToArray();
 }
 
-static void DoAnswerSync(IEnumerable<string> words) {
+static void DoAnswerSync(IEnumerable<string> words, IEnumerable<string> answers, bool doSilent = false) {
     // Read the answers
-    var answers = File.ReadAllLines("answers")
-        .Where(l => !string.IsNullOrEmpty(l))
-        .Select(l => l.Trim());
+    answers ??= File.ReadAllLines("answers")
+            .Where(l => !string.IsNullOrEmpty(l))
+            .Select(l => l.Trim());
+
+    if (!answers.Any())
+    {
+        Console.WriteLine("No answers found");
+        return;
+    }
 
     // Determine the letters by selecting all the distinct characters from the answers
     var letters = string.Join("", answers).ToCharArray().Distinct()
@@ -111,13 +135,19 @@ static void DoAnswerSync(IEnumerable<string> words) {
     Console.WriteLine($"Words to be removed: {toBeRemoved.Count()}");
     Console.WriteLine($"Answers: {answers.Count()}");
     Console.WriteLine($"Found words: {wordList.Count()}");
-    Console.WriteLine();
-    Console.Write("Do you want to sync (Y/n)? ");
-    var doSync = Console.ReadKey();
-    Console.WriteLine();
-    if (doSync.KeyChar == 'y' || doSync.Key == ConsoleKey.Enter)
+    if (!doSilent)
     {
+        Console.WriteLine();
+        Console.Write("Do you want to sync (Y/n)? ");
+        var doSync = Console.ReadKey();
+        Console.WriteLine();
+        if (doSync.KeyChar == 'y' || doSync.Key == ConsoleKey.Enter)
+        {
+            SyncWordList(words);
+        }
+    } else {
         SyncWordList(words);
     }
+
     Console.WriteLine("Done");
 }

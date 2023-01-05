@@ -5,7 +5,7 @@ var trimWordList = args.Length == 1 && args[0].ToLower() == "trim";
 var doAnswerSync = args.Length == 1 && args[0].ToLower() == "answers";
 var doRefineDictionary = args.Length == 1 && args[0].ToLower() == "refine";
 
-if (!syncWordLists && !trimWordList && !doAnswerSync && !doRefineDictionary)
+if (!syncWordLists && !trimWordList && !doAnswerSync && !doRefineDictionary && args.Length != 2)
 {
     Console.WriteLine("Usage: WordLookup [command]");
     Console.WriteLine();
@@ -53,11 +53,11 @@ if (doAnswerSync)
 }
 
 var wordList = Solve(words, args[0].ToCharArray(), args[1]);
-foreach (var word in words)
+foreach (var word in wordList)
 {
     Console.WriteLine(word);
 }
-Console.WriteLine($"Words: {words.Count()}");
+Console.WriteLine($"Words: {wordList.Count()}");
 
 
 static void SyncWordList(IEnumerable<string> words) {

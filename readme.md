@@ -32,4 +32,4 @@ This uses [Playwright](https://playwright.dev/) to iterate over the historic gam
 
 ## Acknowledgements
 
-Thanks to https://nytbee.com/ for providing archival answers for refining the dictionary. I looked at a few sites that had archives and this one provided answers in a way that was easiest to copy and paste from.
+Thanks to https://nytbee.com/ for providing archival answers for refining the dictionary. I looked at a few sites that had archives and this one provided answers in a way that was easiest to copy and paste from and to automate with Playwright.

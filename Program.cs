@@ -127,7 +127,7 @@ static void DoAnswerSync(IEnumerable<string> words, IEnumerable<string>? answers
     // Read the answers
     answers ??= File.ReadAllLines("answers")
             .Where(l => !string.IsNullOrEmpty(l))
-            .Select(l => l.Trim());
+            .Select(l => l.Trim().ToLower());
 
     if (!answers.Any())
     {
@@ -140,8 +140,9 @@ static void DoAnswerSync(IEnumerable<string> words, IEnumerable<string>? answers
         .Where(l => "qwertyuiopasdfghjklzxcvbnm".Contains(l)).ToArray();
 
     // Get the center letter by selecting the only character that appears in all answers
-    // Note: Is it possible there may be more than one candidate that meets the criteria?
+    // Note: It's possible there may be more than one candidate that meets the criteria
     var first = answers.First().Distinct();
+
     var proposed = first.Where(c => answers.All(a => a.Contains(c)));
     var center = proposed.First().ToString();
     var wordList = Solve(words, letters, center);

@@ -10,10 +10,10 @@ if (!syncWordLists && !trimWordList && !doAnswerSync && !doRefineDictionary && a
     Console.WriteLine("Usage: WordLookup [command]");
     Console.WriteLine();
     Console.WriteLine("Commands:");
-    Console.WriteLine("  --sync                             Add/remove words from the word list");
-    Console.WriteLine("  --trim                             Trim words from the word list that don't follow Spelling Bee rules");
-    Console.WriteLine("  --answers                          Read words from an answers file and compare them to the dictionary");
-    Console.WriteLine("  --refine                           Extract answers from https://nytbee.com and refine the word dictionary");
+    Console.WriteLine("  sync                             Add/remove words from the word list");
+    Console.WriteLine("  trim                             Trim words from the word list that don't follow Spelling Bee rules");
+    Console.WriteLine("  answers                          Read words from an answers file and compare them to the dictionary");
+    Console.WriteLine("  refine                           Extract answers from https://nytbee.com and refine the word dictionary");
     Console.WriteLine("  <letter list> <center letter>      Find all words that contain only letters in <letter list> AND the center letter");
     return;
 }

@@ -1,0 +1,80 @@
+﻿@page "/"
+@inject HttpClient Http
+
+<PageTitle>Word lookup</PageTitle>
+
+<h1>Word lookup</h1>
+
+<style>
+    .word {
+        background-color: #fafafa;
+        padding: 0.5em;
+        margin: 4px;
+    }
+</style>
+
+@if (words == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <p>Enter the letters from today's <a href="https://www.nytimes.com/puzzles/spelling-bee">spelling bee</a></p>
+    <label for="letters">Letters (center letter should be first):</label>
+    <input name="letters" id="letters" @bind="input" />
+    <button class="btn btn-primary" @onclick="Lookup">Look up words</button>
+    <div class="container word-list" style="margin: 1em;">
+        <div class="row">
+            @{
+                var wordsPerColumn = (int)(foundWords.Length / 3);
+                var firstLength = wordsPerColumn + (foundWords.Length % 3 > 0 ? 1 : 0);
+                var secondLength = wordsPerColumn + (foundWords.Length % 3 == 2 ? 1 : 0);
+                var first = foundWords.Take(firstLength);
+                var second = foundWords.Skip(firstLength).Take(secondLength);
+                var third = foundWords.Skip(firstLength + secondLength);
+                <div class="col-md">
+                @foreach (var word in first)
+                {
+                    <div class="word">@word</div>
+                }
+                </div>
+                <div class="col-md">
+                @foreach (var word in second)
+                {
+                    <div class="word">@word</div>
+                }
+                </div>
+                <div class="col-md">
+                @foreach (var word in third)
+                {
+                    <div class="word">@word</div>
+                }
+                </div>
+            }
+        </div>
+    </div>
+    <div>
+        @foundWords.Length words
+    </div>
+}
+
+@code {
+    private string[]? words;
+    private string[] foundWords = Array.Empty<string>();
+    private string input = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        words = (await Http.GetStringAsync("https://raw.githubusercontent.com/kbaley/WordLookup/main/words")).Split("\n");
+    }
+    private void Lookup()
+    {
+        if (string.IsNullOrWhiteSpace(input)) {
+            return;
+        }
+        var center = input[0];
+
+        foundWords = words.Where(
+            w => w.Contains(center) && w.All(c => input.Contains(c))).ToArray();
+    }
+}

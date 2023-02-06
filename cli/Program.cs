@@ -23,7 +23,7 @@ if (!syncWordLists && !trimWordList && !doAnswerSync && !doRefineDictionary && a
 //   - Number of distinct letters is 7 or less
 // It's also regularly augmented with new words that the NYT accepts and has some removed that
 // the NYT doesn't accept
-var words = File.ReadAllLines("words");
+var words = File.ReadAllLines("../words");
 
 // Trims the word list to ones that contain only 7 or fewer unique letters
 if (trimWordList)
@@ -68,7 +68,7 @@ static void SyncWordList(IEnumerable<string> words) {
     newList = newList.OrderBy(w => w).ToList();
     var ignored = File.ReadAllLines("toBeRemoved");
     words = newList.Where(w => !ignored.Contains(w));
-    File.WriteAllLines("words", words);
+    File.WriteAllLines("../words", words);
     File.WriteAllLines("toBeAdded", Array.Empty<string>());
     File.WriteAllLines("toBeRemoved", Array.Empty<string>());
 }
@@ -77,7 +77,7 @@ static void TrimWordList(IEnumerable<string> words) {
     var sevenLetters = words
         .Where(w => w.Length >= 4)
         .Where(w => w.ToLower().Distinct().Count() <= 7);
-    File.WriteAllLines("words", sevenLetters);
+    File.WriteAllLines("../words", sevenLetters);
 }
 
 static IEnumerable<string> Solve(IEnumerable<string> words, char[] letters, string center) {
@@ -117,7 +117,7 @@ async static Task RefineDictionary(IEnumerable<string> words) {
         if (answers.Count > 0)
         {
             DoAnswerSync(words, answers, true);
-            words = File.ReadAllLines("words");
+            words = File.ReadAllLines("../words");
         }
         date = date.AddDays(1);
     }

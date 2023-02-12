@@ -73,6 +73,9 @@ else
             return;
         }
         var center = input[0];
+        if (words == null) {
+            return;
+        }
 
         foundWords = words.Where(
             w => w.Contains(center) && w.All(c => input.Contains(c))).ToArray();

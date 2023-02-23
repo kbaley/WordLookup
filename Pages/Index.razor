@@ -8,15 +8,14 @@
         column-count: 3;
         column-gap: 20px;
     }
-    .wordList li {
+    .wordList li, .hints li {
         list-style: none;
         padding: 0.25em 0.5em;
         margin: 0.25em;
     }
-    .wordList li:nth-of-type(odd) {
+    .wordList li:nth-of-type(odd), .hints li:nth-of-type(odd) {
         background-color: #f6f6f6;
     }
-    
 </style>
 
 <h1>Word lookup</h1>
@@ -31,26 +30,38 @@ else
     <label for="letters">Letters (center letter should be first):</label>
     <input name="letters" id="letters" @bind="input" />
     <button class="btn btn-primary" @onclick="Lookup">Look up words</button>
-    <div class="container word-list" style="margin: 1em;">
+    <button class="btn btn-secondary" @onclick="Hint">Give me a hint</button>
+    <h3 hidden="@(hints.Count() == 0)">Hints</h3>
+    <div class="container m-1" hidden="@(hints.Count() == 0)">
         <div class="row">
-            @{
-                <ul class="wordList">
-                @foreach (var word in foundWords)
+            <ul class="hints">
+                @foreach (var word in hints)
                 {
                     <li>@word</li>
                 }
-                </ul>
+            </ul>
+        </div>
+    </div>
+    <div class="container m-1">
+        <div class="row">
+            <ul class="wordList">
+            @foreach (var word in wordList)
+            {
+                <li>@word</li>
             }
+            </ul>
         </div>
     </div>
     <div>
-        @foundWords.Length words
+        @wordCount words
     </div>
 }
 
 @code {
     private string[]? words;
-    private string[] foundWords = Array.Empty<string>();
+    private int wordCount = 0;
+    private string[] wordList = Array.Empty<string>();
+    private IList<string> hints = new List<string>();
     private string input = "";
 
     protected override async Task OnInitializedAsync()
@@ -59,15 +70,32 @@ else
     }
     private void Lookup()
     {
+        hints = new List<string>();
+        wordList = GetWordList().ToArray();
+        wordCount = wordList.Count();
+    }
+
+    private IEnumerable<string> GetWordList() {
         if (string.IsNullOrWhiteSpace(input)) {
-            return;
+            return Array.Empty<string>();
         }
         var center = input[0];
         if (words == null) {
-            return;
+            return Array.Empty<string>();
         }
 
-        foundWords = words.Where(
+        return words.Where(
             w => w.Contains(center) && w.All(c => input.Contains(c))).ToArray();
+    }
+
+    private void Hint()
+    {
+        wordList = Array.Empty<string>();
+        var fullList = GetWordList();
+        var foundWords = fullList
+            .Where(w => !hints.Contains(w));
+        wordCount = fullList.Count();
+        var random = new Random();
+        hints.Add(foundWords.ElementAt(random.Next(foundWords.Count())));
     }
 }

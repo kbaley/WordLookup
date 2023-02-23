@@ -3,15 +3,23 @@
 
 <PageTitle>Word lookup</PageTitle>
 
-<h1>Word lookup</h1>
-
 <style>
-    .word {
-        background-color: #fafafa;
-        padding: 0.5em;
-        margin: 4px;
+    .wordList {
+        column-count: 3;
+        column-gap: 20px;
     }
+    .wordList li {
+        list-style: none;
+        padding: 0.25em 0.5em;
+        margin: 0.25em;
+    }
+    .wordList li:nth-of-type(odd) {
+        background-color: #f6f6f6;
+    }
+    
 </style>
+
+<h1>Word lookup</h1>
 
 @if (words == null)
 {
@@ -26,30 +34,12 @@ else
     <div class="container word-list" style="margin: 1em;">
         <div class="row">
             @{
-                var wordsPerColumn = (int)(foundWords.Length / 3);
-                var firstLength = wordsPerColumn + (foundWords.Length % 3 > 0 ? 1 : 0);
-                var secondLength = wordsPerColumn + (foundWords.Length % 3 == 2 ? 1 : 0);
-                var first = foundWords.Take(firstLength);
-                var second = foundWords.Skip(firstLength).Take(secondLength);
-                var third = foundWords.Skip(firstLength + secondLength);
-                <div class="col-md">
-                @foreach (var word in first)
+                <ul class="wordList">
+                @foreach (var word in foundWords)
                 {
-                    <div class="word">@word</div>
+                    <li>@word</li>
                 }
-                </div>
-                <div class="col-md">
-                @foreach (var word in second)
-                {
-                    <div class="word">@word</div>
-                }
-                </div>
-                <div class="col-md">
-                @foreach (var word in third)
-                {
-                    <div class="word">@word</div>
-                }
-                </div>
+                </ul>
             }
         </div>
     </div>
